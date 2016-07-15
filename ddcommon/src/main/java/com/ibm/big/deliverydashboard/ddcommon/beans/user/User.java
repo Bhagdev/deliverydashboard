@@ -25,7 +25,7 @@ public class User
 	String firstname;
 	String lastname;
 	String dateOfBirth;
-	String dateOfJoining;
+	String dateOfJoiningIBM;
 	String careerStartDate;
 	Designation designation;
 	String band;
@@ -35,6 +35,7 @@ public class User
 	String updateddate;
 	String password;
 	boolean locked;
+	String diversity;
 
 	public String getId()
 	{
@@ -44,6 +45,16 @@ public class User
 	public void setId(String id)
 	{
 		this.id = id;
+	}
+	
+	public String getDiversity()
+	{
+		return diversity;
+	}
+
+	public void setDiversity(String diversity)
+	{
+		this.diversity = diversity;
 	}
 
 	public String getPhone()
@@ -86,14 +97,14 @@ public class User
 		this.dateOfBirth = dateOfBirth;
 	}
 
-	public String getDateOfJoining()
+	public String getDateOfJoiningIBM()
 	{
-		return dateOfJoining;
+		return dateOfJoiningIBM;
 	}
 
-	public void setDateOfJoining(String dateOfJoining)
+	public void setDateOfJoiningIBM(String dateOfJoining)
 	{
-		this.dateOfJoining = dateOfJoining;
+		this.dateOfJoiningIBM = dateOfJoining;
 	}
 
 	public String getEmail()

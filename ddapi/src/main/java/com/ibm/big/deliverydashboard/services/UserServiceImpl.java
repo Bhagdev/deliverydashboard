@@ -96,9 +96,9 @@ public class UserServiceImpl implements UserService
 				u.setCareerStartDate(user.getCareerStartDate());
 			}
 
-			if (user.getDateOfJoining() != null)
+			if (user.getDateOfJoiningIBM() != null)
 			{
-				u.setDateOfJoining(user.getDateOfJoining());
+				u.setDateOfJoiningIBM(user.getDateOfJoiningIBM());
 			}
 
 			if (user.getRoles() != null)
