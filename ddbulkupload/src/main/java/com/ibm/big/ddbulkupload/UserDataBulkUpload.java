@@ -13,10 +13,6 @@ import com.ibm.big.deliverydashboard.ddcommon.beans.user.Role;
 import com.ibm.big.deliverydashboard.ddcommon.beans.user.SkillTag;
 import com.ibm.big.deliverydashboard.ddcommon.beans.user.User;
 
-/**
- * Hello world!
- *
- */
 public class UserDataBulkUpload 
 {
     public static void main( String[] args ) throws Exception
@@ -49,7 +45,7 @@ public class UserDataBulkUpload
 			user.setLastname(userAttribs[3]);
 			user.setDateOfBirth(userAttribs[4]);
 			user.setDateOfJoiningIBM(userAttribs[5]);
-			user.setCreationdate(User.dateFormat.format(new Date()));
+			user.setCreationdate(User.DATE_FORMAT.format(new Date()));
 			Designation d = new Designation();
 			d.setProfession(userAttribs[6]);
 			d.setSpecialization(userAttribs[7]);

@@ -29,7 +29,7 @@ public class MongoUserRepositoryImpl implements MongoUserRepositoryCustom
 	{
 		logger.debug("updating lock status of user = " + email + " to locked = " + locked);
 		WriteResult wr = mongoTemplate.updateFirst(query(where("email").is(email)),
-				update("locked", locked).set("updateddate", User.dateFormat.format(new Date())), User.class);
+				update("locked", locked).set("updateddate", User.DATE_FORMAT.format(new Date())), User.class);
 		logger.debug("update result = " + wr.getN());
 		return wr.getN();
 	}

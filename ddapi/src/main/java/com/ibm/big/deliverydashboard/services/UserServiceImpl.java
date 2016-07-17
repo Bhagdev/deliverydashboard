@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ibm.big.deliverydashboard.controllers.UserController;
 import com.ibm.big.deliverydashboard.dao.elastic.ElasticUserRepository;
 import com.ibm.big.deliverydashboard.dao.mongo.MongoUserRepository;
 import com.ibm.big.deliverydashboard.ddcommon.beans.user.User;
@@ -17,7 +16,7 @@ import com.ibm.big.deliverydashboard.ddcommon.beans.user.User;
 @Service
 public class UserServiceImpl implements UserService
 {
-	private static final Logger logger = LogManager.getLogger(UserController.class);
+	private static final Logger logger = LogManager.getLogger(UserServiceImpl.class);
 
 	@Autowired
 	MongoUserRepository userRepo;
@@ -112,7 +111,7 @@ public class UserServiceImpl implements UserService
 			}
 
 			logger.debug("Updated User = " + u);
-			u.setUpdateddate(User.dateFormat.format(new Date()));
+			u.setUpdateddate(User.DATE_FORMAT.format(new Date()));
 			userRepo.save(u);
 			u.setPassword(null);
 			elasticRepo.save(u);
@@ -143,7 +142,7 @@ public class UserServiceImpl implements UserService
 			{
 				u.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
 			}
-			u.setUpdateddate(User.dateFormat.format(new Date()));
+			u.setUpdateddate(User.DATE_FORMAT.format(new Date()));
 			userRepo.save(u);
 			u.setPassword(null);
 			elasticRepo.save(u);

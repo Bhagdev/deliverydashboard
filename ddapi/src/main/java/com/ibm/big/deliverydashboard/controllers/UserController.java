@@ -19,7 +19,7 @@ import com.ibm.big.deliverydashboard.ddcommon.beans.user.User;
 import com.ibm.big.deliverydashboard.services.UserService;
 
 @RestController
-public class UserController
+public class UserController extends AbstractController
 {
 	private static final Logger logger = LogManager.getLogger(UserController.class);
 
@@ -27,27 +27,29 @@ public class UserController
 	UserService userService;
 
 	@RequestMapping(method = RequestMethod.POST, value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ResponseEntity<User> createUser(@RequestBody(required = true) User user)
+	public @ResponseBody ResponseEntity<ResponseBean<User>> createUser(@RequestBody(required = true) User user)
 	{
-		ResponseEntity<User> response;
+		ResponseEntity<ResponseBean<User>> response;
+		ResponseBean<User> rb = new ResponseBean<>();
 		try
 		{
 			User p = userService.createUser(user);
-			response = ResponseEntity.ok(p);
+			rb.setResponse(p);
+			response = ResponseEntity.ok(rb);
 		} catch (Exception e)
 		{
-			logger.error(e);
-			response = ResponseEntity.badRequest().body(null);
+			response = handelException(e, rb);
 		}
 		return response;
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ResponseEntity<User> getUserByEmail(
+	public @ResponseBody ResponseEntity<ResponseBean<User>> getUserByEmail(
 			@RequestParam(value = "email", required = false) String email,
 			@RequestParam(value = "id", required = false) String id)
 	{
-		ResponseEntity<User> response;
+		ResponseEntity<ResponseBean<User>> response;
+		ResponseBean<User> rb = new ResponseBean<>();
 		try
 		{
 			User user = null;
@@ -60,45 +62,48 @@ public class UserController
 				user = userService.findByEmail(email);
 			}
 				
-			response = ResponseEntity.ok(user);
+			rb.setResponse(user);
+			response = ResponseEntity.ok(rb);
+			
 		} catch (Exception e)
 		{
-			logger.error(e);
-			response = ResponseEntity.badRequest().body(null);
+			response = handelException(e, rb);
 		}
 		return response;
 	}
 
 	@RequestMapping(method = RequestMethod.PATCH, value = "/user/profile", produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("#user.email == authentication.name")
-	public @ResponseBody ResponseEntity<User> updateUserProfile(@RequestBody(required = true) User user)
+	public @ResponseBody ResponseEntity<ResponseBean<User>> updateUserProfile(@RequestBody(required = true) User user)
 	{
-		ResponseEntity<User> response;
+		ResponseEntity<ResponseBean<User>> response;
+		ResponseBean<User> rb = new ResponseBean<>();
 		try
 		{
 			User u = userService.updateUser(user);
-			response = ResponseEntity.ok(u);
+			rb.setResponse(u);
+			response = ResponseEntity.ok(rb);
 		} catch (Exception e)
 		{
-			logger.error(e);
-			response = ResponseEntity.badRequest().body(null);
+			response = handelException(e, rb);
 		}
 		return response;
 	}
 
 	@RequestMapping(method = RequestMethod.PATCH, value = "/user/restricted", produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-	public @ResponseBody ResponseEntity<User> updateUserRestricted(@RequestBody(required = true) User user)
+	public @ResponseBody ResponseEntity<ResponseBean<User>> updateUserRestricted(@RequestBody(required = true) User user)
 	{
-		ResponseEntity<User> response;
+		ResponseEntity<ResponseBean<User>> response;
+		ResponseBean<User> rb = new ResponseBean<>();
 		try
 		{
 			User u = userService.updateUserRestricted(user);
-			response = ResponseEntity.ok(u);
+			rb.setResponse(u);
+			response = ResponseEntity.ok(rb);
 		} catch (Exception e)
 		{
-			logger.error(e);
-			response = ResponseEntity.badRequest().body(null);
+			response = handelException(e, rb);
 		}
 		return response;
 	}
