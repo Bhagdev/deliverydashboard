@@ -1,6 +1,7 @@
 package com.ibm.big.deliverydashboard.services;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -126,7 +127,6 @@ public class ProjectServiceImpl implements ProjectService
 			throw new IllegalArgumentException("Invalid Project Sprint Specified");
 		}
 		
-//		Set<TeamMember> tms = new HashSet<>();
 		for (Iterator<TeamMember> iterator = ps.getSprint().getTeamMembers().iterator(); iterator.hasNext();)
 		{
 			TeamMember tm = iterator.next();
@@ -138,7 +138,6 @@ public class ProjectServiceImpl implements ProjectService
 			
 			u.setPassword(null);
 			tm.setUser(u);
-//			tms.add(tm);
 		}
 
 		ps.setId(UUID.randomUUID().toString());
@@ -164,6 +163,12 @@ public class ProjectServiceImpl implements ProjectService
 		elasticProjSnapshotRepo.save(ps);
 
 		return ps;
+	}
+	
+	@Override
+	public List<ProjectSnapshot> getProjectSnapshotsById(String id)
+	{
+		return elasticProjSnapshotRepo.findByProjectId(id);
 	}
 
 }
