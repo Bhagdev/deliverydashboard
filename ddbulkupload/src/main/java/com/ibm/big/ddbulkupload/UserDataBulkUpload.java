@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.web.client.RestTemplate;
 
@@ -53,7 +55,7 @@ public class UserDataBulkUpload
 			user.setBand(userAttribs[8]);
 			
 			String[] tags = userAttribs[9].split(";");
-			List<SkillTag> lskill = new ArrayList<SkillTag>();
+			Set<SkillTag> lskill = new HashSet<>();
 			for (int i = 0; i < tags.length; i++)
 			{
 				SkillTag st = new SkillTag();
@@ -64,7 +66,7 @@ public class UserDataBulkUpload
 			user.setTags(lskill);
 			
 			String[] roles = userAttribs[10].split(";");
-			List<Role> lRole = new ArrayList<Role>();
+			Set<Role> lRole = new HashSet<>();
 			for (int i = 0; i < roles.length; i++)
 			{
 				Role r = new Role();

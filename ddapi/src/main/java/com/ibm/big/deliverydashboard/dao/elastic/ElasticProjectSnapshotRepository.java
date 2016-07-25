@@ -6,7 +6,7 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 
 import com.ibm.big.deliverydashboard.ddcommon.beans.project.ProjectSnapshot;
 
-public interface ElasticProjectSnapshotRepository extends ElasticsearchRepository<ProjectSnapshot, String>
+public interface ElasticProjectSnapshotRepository extends ElasticsearchRepository<ProjectSnapshot, String>, ElasticProjectSnapshotRepositoryCustom
 {
 	public ProjectSnapshot findTopByProjectIdOrderByLogDateDesc(String id);
 	

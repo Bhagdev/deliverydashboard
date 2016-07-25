@@ -3,6 +3,7 @@ package com.ibm.big.deliverydashboard.security;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,8 +32,8 @@ public class UserDetailsServiceImpl implements UserDetailsService
 	{
 		logger.debug("loading user details for username = " + username);
 		User user = userRepo.findByEmail(username);
-		
-		if (user == null )
+
+		if (user == null)
 		{
 			throw new UsernameNotFoundException("User not found for username = " + username);
 		}
@@ -42,12 +43,15 @@ public class UserDetailsServiceImpl implements UserDetailsService
 
 		}
 
-		List<Role> roles = user.getRoles();
+		Set<Role> roles = user.getRoles();
 		List<GrantedAuthority> authorities = new ArrayList<>();
-		for (Iterator<Role> iterator = roles.iterator(); iterator.hasNext();)
+		if (roles != null)
 		{
-			Role role = iterator.next();
-			authorities.add(new SimpleGrantedAuthority(role.getName()));
+			for (Iterator<Role> iterator = roles.iterator(); iterator.hasNext();)
+			{
+				Role role = iterator.next();
+				authorities.add(new SimpleGrantedAuthority(role.getName()));
+			}
 		}
 
 		UserDetails userDetails = (UserDetails) new org.springframework.security.core.userdetails.User(user.getEmail(),

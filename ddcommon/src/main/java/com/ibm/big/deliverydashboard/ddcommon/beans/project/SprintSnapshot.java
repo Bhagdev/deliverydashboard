@@ -23,21 +23,22 @@ public class SprintSnapshot
 	public static String EFFORT_SUPPORT = "support";
 	public static String EFFORT_UNPRODUCTIVE = "unproductive";
 
-	String id;
-	int sprintNumber;
+	private String id;
+	private int sprintNumber;
 
-	String status;
+	private String status;
 
-	String startDate;
-	String endDate;
+	private String startDate;
+	private String endDate;
 
-	int userStoryCount;
+	private int userStoryCount;
 
-	Set<TeamMember> teamMembers;
-
-	Map<String, Double> spentHours;
-	Map<String, Double> remainingHours;
-	Map<String, Double> estimatedHours;
+	private Set<TeamMember> teamMembers;
+	private TeamInfo teamInfo;
+	
+	private Map<String, Double> spentHours;
+	private Map<String, Double> remainingHours;
+	private Map<String, Double> estimatedHours;
 
 	Map<String, Double> qualityMetrics;
 
@@ -223,5 +224,17 @@ public class SprintSnapshot
 			return false;
 		return true;
 	}
+
+	public TeamInfo getTeamInfo()
+	{
+		return teamInfo;
+	}
+
+	public void setTeamInfo(TeamInfo teamInfo)
+	{
+		this.teamInfo = teamInfo;
+	}
+	
+	
 
 }

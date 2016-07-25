@@ -1,8 +1,6 @@
 package com.ibm.big.deliverydashboard.services;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,8 +12,6 @@ import com.ibm.big.deliverydashboard.dao.mongo.MongoProjectRepository;
 import com.ibm.big.deliverydashboard.dao.mongo.MongoUserRepository;
 import com.ibm.big.deliverydashboard.ddcommon.beans.project.Project;
 import com.ibm.big.deliverydashboard.ddcommon.beans.project.ProjectSnapshot;
-import com.ibm.big.deliverydashboard.ddcommon.beans.project.TeamMember;
-import com.ibm.big.deliverydashboard.ddcommon.beans.user.User;
 
 @Service
 public class ProjectServiceImpl implements ProjectService
@@ -30,6 +26,9 @@ public class ProjectServiceImpl implements ProjectService
 
 	@Autowired
 	ElasticProjectSnapshotRepository elasticProjSnapshotRepo;
+
+	@Autowired
+	ProjectSnapshotBuilderFactory psbuilderFactory;
 
 	@Override
 	public Project createProject(Project project)
@@ -114,61 +113,35 @@ public class ProjectServiceImpl implements ProjectService
 			throw new IllegalArgumentException("Missing Mandatory ProjectSnapshot Parameters");
 		}
 
-		Project p = mongoProjRepo.findOne(ps.getProject().getId());
+		ProjectSnapshotBuilder psb = psbuilderFactory.getBuilderInstance();
+		psb.initializeSnapshot(ps).buildProject(ps).buildTeamInfo(ps);
 
-		if (p == null)
-		{
-			throw new IllegalArgumentException("Invalid Project Specified");
-		}
-
-		if (ps.getProject().getCurrentSprint() != p.getCurrentSprint()
-				|| ps.getProject().getCurrentSprint() != ps.getSprint().getSprintNumber())
-		{
-			throw new IllegalArgumentException("Invalid Project Sprint Specified");
-		}
-		
-		for (Iterator<TeamMember> iterator = ps.getSprint().getTeamMembers().iterator(); iterator.hasNext();)
-		{
-			TeamMember tm = iterator.next();
-			User u = mongoUserRepo.findByEmail(tm.getUser().getEmail());
-			if (u == null)
-			{
-				throw new IllegalArgumentException("Invalid Team Member Specified. User with email: " + tm.getUser().getEmail() + " doesn't exist");
-			}
-			
-			u.setPassword(null);
-			tm.setUser(u);
-		}
-
-		ps.setId(UUID.randomUUID().toString());
-		ps.setProject(p);
-		ps.getSprint().setId(ps.getProject().getId() + ps.getProject().getCurrentSprint());
-//		ps.setLogDate(ProjectSnapshot.DATE_FORMAT.format(new Date()));
-
-		ProjectSnapshot lastSnapshot = null;
-		try
-		{
-			lastSnapshot = elasticProjSnapshotRepo
-					.findTopByProjectIdOrderByLogDateDesc(ps.getProject().getId());
-		} catch (Exception e)
-		{
-			logger.error(e.getMessage(), e);
-		}
-
-		if (lastSnapshot == null)
-		{
-			logger.debug("No Snapshot for the project found");
-		}
+		// ps.setLogDate(ProjectSnapshot.DATE_FORMAT.format(new Date()));
+		// ProjectSnapshot lastSnapshot = null;
+		// try
+		// {
+		// lastSnapshot = elasticProjSnapshotRepo
+		// .findTopByProjectIdOrderByLogDateDesc(ps.getProject().getId());
+		// } catch (Exception e)
+		// {
+		// logger.error(e.getMessage(), e);
+		// }
+		//
+		// if (lastSnapshot == null)
+		// {
+		// logger.debug("No Snapshot for the project found");
+		// }
 
 		elasticProjSnapshotRepo.save(ps);
 
 		return ps;
 	}
-	
+
 	@Override
 	public List<ProjectSnapshot> getProjectSnapshotsById(String id)
 	{
-		return elasticProjSnapshotRepo.findByProjectId(id);
+//		return elasticProjSnapshotRepo.findByProjectId(id);
+		return elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id);
 	}
 
 }

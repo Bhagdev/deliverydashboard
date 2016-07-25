@@ -83,15 +83,15 @@ public class ProjectController extends AbstractController
 		return response;
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ResponseEntity<ResponseBean<List<ProjectSnapshot>>> getProjectSnapshot(@PathVariable(value="id") String id)
+	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<ResponseBean<List<ProjectSnapshot>>> getProjectSnapshot(@PathVariable(value="projectId") String projectId)
 	{
-		logger.debug("finding project snapshots for project.id: " + id);
+		logger.debug("finding project snapshots for project.id: " + projectId);
 		ResponseEntity<ResponseBean<List<ProjectSnapshot>>> response;
 		ResponseBean<List<ProjectSnapshot>> rb = new ResponseBean<>();
 		try
 		{
-			List<ProjectSnapshot> p = projService.getProjectSnapshotsById(id);
+			List<ProjectSnapshot> p = projService.getProjectSnapshotsById(projectId);
 			rb.setResponse(p);
 			response = ResponseEntity.ok(rb);
 		} catch (Exception e)

@@ -1,8 +1,8 @@
 package com.ibm.big.deliverydashboard.ddcommon.beans.user;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -29,8 +29,8 @@ public class User
 	String careerStartDate;
 	Designation designation;
 	String band;
-	List<SkillTag> tags;
-	List<Role> roles;
+	Set<SkillTag> tags;
+	Set<Role> roles;
 	String creationdate;
 	String updateddate;
 	String password;
@@ -137,12 +137,12 @@ public class User
 		this.band = band;
 	}
 
-	public List<SkillTag> getTags()
+	public Set<SkillTag> getTags()
 	{
 		return tags;
 	}
 
-	public void setTags(List<SkillTag> tags)
+	public void setTags(Set<SkillTag> tags)
 	{
 		this.tags = tags;
 	}
@@ -151,17 +151,17 @@ public class User
 	{
 		if (this.tags == null)
 		{
-			this.tags = new ArrayList<>();
+			this.tags = new HashSet<>();
 		}
 		this.tags.add(tag);
 	}
 
-	public List<Role> getRoles()
+	public Set<Role> getRoles()
 	{
 		return roles;
 	}
 
-	public void setRoles(List<Role> roles)
+	public void setRoles(Set<Role> roles)
 	{
 		this.roles = roles;
 	}
@@ -170,7 +170,7 @@ public class User
 	{
 		if (this.roles == null)
 		{
-			this.roles = new ArrayList<>();
+			this.roles = new HashSet<>();
 		}
 		this.roles.add(role);
 	}
