@@ -1,0 +1,10 @@
+version: '2'
+services:
+ ddapi:
+  image: deliverydashboard/ddapi
+  ports:
+  - "8090:8090"
+  volumes:
+  - /logs/ddapi/:/logs
+  env_file: .env
+
