@@ -2,10 +2,8 @@ package com.ibm.big.ddbulkupload;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.springframework.web.client.RestTemplate;

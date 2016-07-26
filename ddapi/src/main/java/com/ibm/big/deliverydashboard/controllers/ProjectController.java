@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -26,10 +27,11 @@ public class ProjectController extends AbstractController
 
 	@Autowired
 	ProjectService projService;
-	
+
 	@RequestMapping(method = RequestMethod.POST, value = "/project", produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-	public @ResponseBody ResponseEntity<ResponseBean<Project>> createProject(@RequestBody(required = true) Project project)
+	public @ResponseBody ResponseEntity<ResponseBean<Project>> createProject(
+			@RequestBody(required = true) Project project)
 	{
 		logger.debug("Creating project: " + project);
 		ResponseEntity<ResponseBean<Project>> response;
@@ -45,10 +47,11 @@ public class ProjectController extends AbstractController
 		}
 		return response;
 	}
-	
+
 	@RequestMapping(method = RequestMethod.PATCH, value = "/project", produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-	public @ResponseBody ResponseEntity<ResponseBean<Project>> updateProject(@RequestBody(required = true) Project project)
+	public @ResponseBody ResponseEntity<ResponseBean<Project>> updateProject(
+			@RequestBody(required = true) Project project)
 	{
 		logger.debug("Updating project: " + project);
 		ResponseEntity<ResponseBean<Project>> response;
@@ -64,7 +67,7 @@ public class ProjectController extends AbstractController
 		}
 		return response;
 	}
-	
+
 	@RequestMapping(method = RequestMethod.POST, value = "/projectsnapshot", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ResponseEntity<ResponseBean<ProjectSnapshot>> createProjectSnapshot(@RequestBody(required = true) ProjectSnapshot projectSnapshot)
 	{
@@ -84,14 +87,16 @@ public class ProjectController extends AbstractController
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ResponseEntity<ResponseBean<List<ProjectSnapshot>>> getProjectSnapshot(@PathVariable(value="projectId") String projectId)
+	public @ResponseBody ResponseEntity<ResponseBean<List<ProjectSnapshot>>> getProjectSnapshot(@PathVariable(value="projectId") String projectId,
+			@RequestHeader(value = "fromDate", required = false) String fromDate,
+			@RequestHeader(value = "toDate", required = false) String toDate)
 	{
 		logger.debug("finding project snapshots for project.id: " + projectId);
 		ResponseEntity<ResponseBean<List<ProjectSnapshot>>> response;
 		ResponseBean<List<ProjectSnapshot>> rb = new ResponseBean<>();
 		try
 		{
-			List<ProjectSnapshot> p = projService.getProjectSnapshotsById(projectId);
+			List<ProjectSnapshot> p = projService.getProjectSnapshotsById(projectId, fromDate, toDate);
 			rb.setResponse(p);
 			response = ResponseEntity.ok(rb);
 		} catch (Exception e)

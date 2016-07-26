@@ -138,10 +138,20 @@ public class ProjectServiceImpl implements ProjectService
 	}
 
 	@Override
-	public List<ProjectSnapshot> getProjectSnapshotsById(String id)
+	public List<ProjectSnapshot> getProjectSnapshotsById(String id, String fromDate, String toDate)
 	{
+		List<ProjectSnapshot> p = null;
+		
+		if (fromDate != null && toDate != null)
+		{
+			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id, fromDate, toDate);
+		}
+		else
+		{
+			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id);
+		}
 //		return elasticProjSnapshotRepo.findByProjectId(id);
-		return elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id);
+		return p;
 	}
 
 }

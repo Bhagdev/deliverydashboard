@@ -10,7 +10,7 @@ public interface ProjectService
 	public Project createProject(Project project);
 	public ProjectSnapshot createProjectSnapshot(ProjectSnapshot ps);
 	public Project updateProject(Project project);
-	public List<ProjectSnapshot> getProjectSnapshotsById(String id);
+	public List<ProjectSnapshot> getProjectSnapshotsById(String id, String fromDate, String toDate);
 
 
 }
