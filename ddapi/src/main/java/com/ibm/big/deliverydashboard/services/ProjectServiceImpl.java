@@ -115,42 +115,25 @@ public class ProjectServiceImpl implements ProjectService
 
 		ProjectSnapshotBuilder psb = psbuilderFactory.getBuilderInstance();
 		psb.initializeSnapshot(ps).buildProject(ps).buildTeamInfo(ps);
-
-		// ps.setLogDate(ProjectSnapshot.DATE_FORMAT.format(new Date()));
-		// ProjectSnapshot lastSnapshot = null;
-		// try
-		// {
-		// lastSnapshot = elasticProjSnapshotRepo
-		// .findTopByProjectIdOrderByLogDateDesc(ps.getProject().getId());
-		// } catch (Exception e)
-		// {
-		// logger.error(e.getMessage(), e);
-		// }
-		//
-		// if (lastSnapshot == null)
-		// {
-		// logger.debug("No Snapshot for the project found");
-		// }
-
 		elasticProjSnapshotRepo.save(ps);
 
 		return ps;
 	}
 
 	@Override
-	public List<ProjectSnapshot> getProjectSnapshotsById(String id, String fromDate, String toDate)
+	public List<ProjectSnapshot> getProjectSnapshotsById(String id, String fromDate, String toDate, Integer page, Integer limit)
 	{
 		List<ProjectSnapshot> p = null;
 		
 		if (fromDate != null && toDate != null)
 		{
-			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id, fromDate, toDate);
+			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id, fromDate, toDate, page, limit);
+			elasticProjSnapshotRepo.getDateHistogram(id, fromDate, toDate, elasticProjSnapshotRepo.AGGREGATION_TYPE_SUM, "sprint.spentHours.build");
 		}
 		else
 		{
-			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id);
+			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id, page, limit);
 		}
-//		return elasticProjSnapshotRepo.findByProjectId(id);
 		return p;
 	}
 

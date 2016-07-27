@@ -42,9 +42,36 @@ public class UserController extends AbstractController
 		}
 		return response;
 	}
-
-	@RequestMapping(method = RequestMethod.GET, value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
+	
+	@RequestMapping(method = RequestMethod.GET, value = "/user/{email}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("#email == authentication.name")
 	public @ResponseBody ResponseEntity<ResponseBean<User>> getUserByEmail(
+			@PathVariable(value="email") String email)
+	{
+		ResponseEntity<ResponseBean<User>> response;
+		ResponseBean<User> rb = new ResponseBean<>();
+		try
+		{
+			User user = null;
+			if (email != null)
+			{
+				user = userService.findByEmail(email);
+			}
+				
+			rb.setResponse(user);
+			response = ResponseEntity.ok(rb);
+			
+		} catch (Exception e)
+		{
+			response = handelException(e, rb);
+		}
+		return response;
+	}
+
+	
+	@RequestMapping(method = RequestMethod.GET, value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN')")
+	public @ResponseBody ResponseEntity<ResponseBean<User>> getUserByEmailOrId(
 			@RequestParam(value = "email", required = false) String email,
 			@RequestParam(value = "id", required = false) String id)
 	{

@@ -45,6 +45,7 @@ public class UserDataBulkUpload
 			user.setLastname(userAttribs[3]);
 			user.setDateOfBirth(userAttribs[4]);
 			user.setDateOfJoiningIBM(userAttribs[5]);
+			user.setCareerStartDate(user.getDateOfJoiningIBM());
 			user.setCreationdate(User.DATE_FORMAT.format(new Date()));
 			Designation d = new Designation();
 			d.setProfession(userAttribs[6]);
@@ -79,7 +80,7 @@ public class UserDataBulkUpload
 			user.setDiversity(userAttribs[12]);
 			
 			RestTemplate template =new RestTemplate();
-			User u = template.postForObject("http://localhost:8090/deliverydashboard/signup", user, User.class);
+			User u = template.postForObject("http://inmbz2239.in.dst.ibm.com:8090/deliverydashboard/signup", user, User.class);
 			System.out.println(u);
 		}
 		

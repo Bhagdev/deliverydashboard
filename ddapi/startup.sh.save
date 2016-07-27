@@ -1,0 +1,19 @@
+#!/bin/bash
+
+ "env": [
+                                    {
+                                        "name": "ELASTICSEARCH_HOST",
+                                        "value": "172.30.174.24"
+                                    },
+                                    {
+                                        "name": "ELASTICSEARCH_PORT",
+                                        "value": "9300"
+                                    },
+                                    {
+                                        "name": "MONGODB_URI",
+                                        "value": "mongodb://172.30.46.38:27017/deliverydashboard"
+                                    }
+                                ],
+
+java -jar target/ddapi-0.0.1-SNAPSHOT.jar > sys.log &
+
