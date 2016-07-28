@@ -3,10 +3,12 @@ package com.ibm.big.deliverydashboard.dao.elastic;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
+import static org.elasticsearch.search.aggregations.AggregationBuilders.avg;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.dateHistogram;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.sum;
 
 import java.text.ParseException;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,6 +18,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
@@ -32,6 +35,10 @@ import org.springframework.data.elasticsearch.core.ResultsExtractor;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
 
+import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationBean;
+import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationBucket;
+import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationResponse;
+import com.ibm.big.deliverydashboard.ddcommon.analysis.DateHistogramRequest;
 import com.ibm.big.deliverydashboard.ddcommon.beans.project.ProjectSnapshot;
 
 public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnapshotRepositoryCustom
@@ -99,36 +106,60 @@ public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnaps
 	}
 
 	@Override
-	public void getDateHistogram(String projectId, String fromDate, String toDate, String subAggType,
-			String subAggField)
+	public AggregationResponse getDateHistogramForProject(DateHistogramRequest dhr)
 	{
-		// String subAgg, String subAggField
+		AggregationResponse aggregationResponse = null;
 		try
 		{
-			long fromEpoch = ProjectSnapshot.DATE_FORMAT.parse(fromDate).getTime();
-			long toEpoch = ProjectSnapshot.DATE_FORMAT.parse(toDate).getTime();
+			DateTime dtFrom = DateTime.parse(dhr.getFromDate(),
+					DateTimeFormat.forPattern(ProjectSnapshot.DATE_FORMAT.toPattern()));
+			DateTime dtTo = DateTime.parse(dhr.getToDate(),
+					DateTimeFormat.forPattern(ProjectSnapshot.DATE_FORMAT.toPattern()));
+			
+			dtFrom.getMillis();
 
-			MatchQueryBuilder mqb = matchQuery("project.id", projectId);
+			long fromEpoch = dtFrom.getMillis();
+			long toEpoch = dtTo.getMillis();
+
+			MatchQueryBuilder mqb = matchQuery(dhr.getQueryField(), dhr.getQueryFieldValue());
 			QueryBuilder qb = boolQuery().must(mqb)
-					.filter(rangeQuery("logDate").gte(fromEpoch).lte(toEpoch).format("epoch_millis"));
+					.filter(rangeQuery(dhr.getDateField())
+							.gte(fromEpoch)
+							.lte(toEpoch)
+							.format("epoch_millis"));
 
-			DateTime dt1 = DateTime.parse(fromDate, DateTimeFormat.forPattern(ProjectSnapshot.DATE_FORMAT.toPattern()));
-			DateTime dt2 = DateTime.parse(toDate, DateTimeFormat.forPattern(ProjectSnapshot.DATE_FORMAT.toPattern()));
+			DateHistogramBuilder dhb = dateHistogram(dhr.getName())
+					.field(dhr.getDateField())
+					.interval(new DateHistogramInterval(dhr.getInterval()))
+					.timeZone(Calendar.getInstance().getTimeZone().getID())
+					.minDocCount(1)
+					.extendedBounds(dtFrom, dtTo);
 
-			DateHistogramBuilder dhb = dateHistogram("date_histo").field("logDate").interval(DateHistogramInterval.WEEK)
-					.timeZone("Asia/Kolkata").minDocCount(1).extendedBounds(dt1, dt2);
-
-			if (AGGREGATION_TYPE_SUM.equals(subAggType))
+			if (dhr.getSubAggregations() != null)
 			{
-				dhb = dhb.subAggregation(sum(subAggField).field(subAggField));
+				for (Iterator<AggregationBean> iterator = dhr.getSubAggregations().iterator(); iterator.hasNext();)
+				{
+					AggregationBean ab = iterator.next();
+					logger.debug("setting aggregation - " + ab.getName() + " field = " + ab.getField());
+
+					if (AggregationBean.AGGREGATION_TYPE_SUM.equals(ab.getType()))
+					{
+						dhb = dhb.subAggregation(sum(ab.getName()).field(ab.getField()));
+					}
+					if (AggregationBean.AGGREGATION_TYPE_AVERAGE.equals(ab.getType()))
+					{
+						dhb = dhb.subAggregation(avg(ab.getName()).field(ab.getField()));
+					}
+				}
 			}
 
-			NativeSearchQueryBuilder nsqb = new NativeSearchQueryBuilder().withIndices("projectsnapshots")
-					.withTypes("projectsnapshot").withQuery(qb).addAggregation(dhb);
+			NativeSearchQueryBuilder nsqb = new NativeSearchQueryBuilder()
+					.withIndices("projectsnapshots")
+					.withTypes("projectsnapshot")
+					.withQuery(qb)
+					.addAggregation(dhb);
 
-			SearchQuery search = nsqb.build();
-
-			Aggregations aggs = elasticTemplate.query(search, new ResultsExtractor<Aggregations>()
+			Aggregations aggs = elasticTemplate.query(nsqb.build(), new ResultsExtractor<Aggregations>()
 			{
 				@Override
 				public Aggregations extract(SearchResponse response)
@@ -137,21 +168,52 @@ public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnaps
 				}
 			});
 
-			InternalHistogram<Bucket> agg = aggs.get("date_histo");
-			List<Bucket> buckets = agg.getBuckets();
+			aggregationResponse = new AggregationResponse();
 
-			for (Iterator<Bucket> iterator = buckets.iterator(); iterator.hasNext();)
+			InternalHistogram<Bucket> internalHistogram = aggs.get(dhr.getName());
+			List<Bucket> fetchedBuckets = internalHistogram.getBuckets();
+
+			for (Iterator<Bucket> iterator = fetchedBuckets.iterator(); iterator.hasNext();)
 			{
-				Bucket bucket = iterator.next();
+				Bucket fetchedBucket = iterator.next();
+				logger.debug("Bucket - " + fetchedBucket.toString());
+				logger.debug("key - " + fetchedBucket.getKeyAsString());
+				logger.debug("fetched bucket - " + fetchedBucket.getKeyAsString() + " has aggregations - " + fetchedBucket.getAggregations());
 
-				logger.debug("Bucket - " + bucket.toString());
-				logger.debug("key - " + bucket.getKeyAsString());
-				logger.debug("value - " + bucket.getAggregations().get(subAggField).getProperty("value"));
+				AggregationBucket responseBucket = new AggregationBucket();
+
+				//responseBucket.setKey(fetchedBucket.getKey());
+				responseBucket.setDoc_count(fetchedBucket.getDocCount());
+				responseBucket.setKey_as_string(fetchedBucket.getKeyAsString());
+
+				if (dhr.getSubAggregations() != null)
+				{
+					for (Iterator<AggregationBean> itr = dhr.getSubAggregations().iterator(); itr.hasNext();)
+					{
+						AggregationBean ab = itr.next();
+						logger.debug("fetching aggregation - " + ab.getName());
+						Aggregation agg = fetchedBucket.getAggregations().get(ab.getName());
+						if (agg != null)
+						{
+							logger.debug("aggregation name - " + agg.getName() + " value - " + agg.getProperty("value"));
+							AggregationBean resAggBean = new AggregationBean();
+							resAggBean.setName(agg.getName());
+							resAggBean.setValue(agg.getProperty("value"));
+							responseBucket.addAggregations(resAggBean);
+						}
+						else
+						{
+							logger.debug("Aggregation not found - " + ab.getName());
+						}
+					}
+				}
+				aggregationResponse.addBuckets(responseBucket);
 			}
 
 		} catch (Exception e)
 		{
 			logger.error("exception in aggregation", e);
 		}
+		return aggregationResponse;
 	}
 }

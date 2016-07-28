@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationResponse;
 import com.ibm.big.deliverydashboard.ddcommon.beans.project.ProjectSnapshot;
+import com.ibm.big.deliverydashboard.services.ProjectDashboardService;
 import com.ibm.big.deliverydashboard.services.ProjectService;
 
 @RestController
@@ -24,6 +26,9 @@ public class ProjectDashboardController extends AbstractController
 
 	@Autowired
 	ProjectService projService;
+
+	@Autowired
+	ProjectDashboardService projDashService;
 
 	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ResponseEntity<ResponseBean<List<ProjectSnapshot>>> getProjectSnapshot(
@@ -48,4 +53,27 @@ public class ProjectDashboardController extends AbstractController
 		return response;
 	}
 
+	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}/spentEffort", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<ResponseBean<AggregationResponse>> getProjectSpentEffort(
+			@PathVariable(value = "projectId") String projectId,
+			@RequestHeader(value = "fromDate", required = false) String fromDate,
+			@RequestHeader(value = "toDate", required = false) String toDate,
+			@RequestHeader(value = "interval", required = false) String interval)
+	{
+		logger.debug("finding project snapshots for project.id: " + projectId);
+		ResponseEntity<ResponseBean<AggregationResponse>> response;
+		ResponseBean<AggregationResponse> rb = new ResponseBean<>();
+		try
+		{
+			AggregationResponse p = projDashService.getProjectSpentEffortDateHistogram(projectId, fromDate, toDate, interval);
+			rb.setResponse(p);
+			response = ResponseEntity.ok(rb);
+		} catch (Exception e)
+		{
+			response = handelException(e, rb);
+		}
+		return response;
+	}
+	
+	
 }

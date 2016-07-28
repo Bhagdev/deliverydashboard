@@ -121,15 +121,15 @@ public class ProjectServiceImpl implements ProjectService
 	}
 
 	@Override
-	public List<ProjectSnapshot> getProjectSnapshotsById(String id, String fromDate, String toDate, Integer page, Integer limit)
+	public List<ProjectSnapshot> getProjectSnapshotsById(String id, String fromDate, String toDate, Integer page,
+			Integer limit)
 	{
 		List<ProjectSnapshot> p = null;
-		
+
 		if (fromDate != null && toDate != null)
 		{
 			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id, fromDate, toDate, page, limit);
-			elasticProjSnapshotRepo.getDateHistogram(id, fromDate, toDate, elasticProjSnapshotRepo.AGGREGATION_TYPE_SUM, "sprint.spentHours.build");
-		}
+		} 
 		else
 		{
 			p = elasticProjSnapshotRepo.getProjectSnapshotsByProjectId(id, page, limit);
