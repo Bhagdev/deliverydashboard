@@ -56,16 +56,17 @@ public class ProjectDashboardController extends AbstractController
 	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}/spentEffort", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ResponseEntity<ResponseBean<AggregationResponse>> getProjectSpentEffort(
 			@PathVariable(value = "projectId") String projectId,
-			@RequestHeader(value = "fromDate", required = false) String fromDate,
-			@RequestHeader(value = "toDate", required = false) String toDate,
-			@RequestHeader(value = "interval", required = false) String interval)
+			@RequestHeader(value = "sprintId", required = false) String sprintId,
+			@RequestHeader(value = "fromDate", required = true) String fromDate,
+			@RequestHeader(value = "toDate", required = true) String toDate,
+			@RequestHeader(value = "interval", required = true) String interval)
 	{
 		logger.debug("finding project snapshots for project.id: " + projectId);
 		ResponseEntity<ResponseBean<AggregationResponse>> response;
 		ResponseBean<AggregationResponse> rb = new ResponseBean<>();
 		try
 		{
-			AggregationResponse p = projDashService.getProjectSpentEffortDateHistogram(projectId, fromDate, toDate, interval);
+			AggregationResponse p = projDashService.getProjectSpentEffortDateHistogram(projectId, sprintId, fromDate, toDate, interval);
 			rb.setResponse(p);
 			response = ResponseEntity.ok(rb);
 		} catch (Exception e)

@@ -16,8 +16,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
@@ -39,6 +42,7 @@ import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationBean;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationBucket;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationResponse;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.DateHistogramRequest;
+import com.ibm.big.deliverydashboard.ddcommon.analysis.FieldQuery;
 import com.ibm.big.deliverydashboard.ddcommon.beans.project.ProjectSnapshot;
 
 public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnapshotRepositoryCustom
@@ -115,25 +119,33 @@ public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnaps
 					DateTimeFormat.forPattern(ProjectSnapshot.DATE_FORMAT.toPattern()));
 			DateTime dtTo = DateTime.parse(dhr.getToDate(),
 					DateTimeFormat.forPattern(ProjectSnapshot.DATE_FORMAT.toPattern()));
-			
+
 			dtFrom.getMillis();
 
 			long fromEpoch = dtFrom.getMillis();
 			long toEpoch = dtTo.getMillis();
 
-			MatchQueryBuilder mqb = matchQuery(dhr.getQueryField(), dhr.getQueryFieldValue());
-			QueryBuilder qb = boolQuery().must(mqb)
-					.filter(rangeQuery(dhr.getDateField())
-							.gte(fromEpoch)
-							.lte(toEpoch)
-							.format("epoch_millis"));
+			if (dhr.getMustCriteria() == null)
+			{
+				return null;
+			}
 
-			DateHistogramBuilder dhb = dateHistogram(dhr.getName())
-					.field(dhr.getDateField())
+			BoolQueryBuilder bqb = boolQuery();
+			for (Iterator<FieldQuery> iterator = dhr.getMustCriteria().iterator(); iterator.hasNext();)
+			{
+				FieldQuery fq = iterator.next();
+				MatchQueryBuilder mqb = matchQuery(fq.getField(), fq.getValue());
+				bqb.must(mqb);
+			}
+
+			QueryBuilder qb = bqb
+					.filter(rangeQuery(dhr.getDateField()).gte(fromEpoch).lte(toEpoch).format("epoch_millis"));
+
+			logger.debug("Datehistogram Query = " + qb.toString());
+
+			DateHistogramBuilder dhb = dateHistogram(dhr.getName()).field(dhr.getDateField())
 					.interval(new DateHistogramInterval(dhr.getInterval()))
-					.timeZone(Calendar.getInstance().getTimeZone().getID())
-					.minDocCount(1)
-					.extendedBounds(dtFrom, dtTo);
+					.timeZone(Calendar.getInstance().getTimeZone().getID()).minDocCount(1).extendedBounds(dtFrom, dtTo);
 
 			if (dhr.getSubAggregations() != null)
 			{
@@ -144,20 +156,38 @@ public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnaps
 
 					if (AggregationBean.AGGREGATION_TYPE_SUM.equals(ab.getType()))
 					{
-						dhb = dhb.subAggregation(sum(ab.getName()).field(ab.getField()));
+						if (ab.getField() != null)
+						{
+							dhb = dhb.subAggregation(sum(ab.getName()).field(ab.getField()));
+						} else if (ab.getScript() != null)
+						{
+							dhb = dhb.subAggregation(sum(ab.getName()).script(new Script(ab.getScript().getScriptText(),
+									ScriptService.ScriptType.INLINE, ab.getScript().getLanguage(), null)));
+						}
 					}
 					if (AggregationBean.AGGREGATION_TYPE_AVERAGE.equals(ab.getType()))
 					{
-						dhb = dhb.subAggregation(avg(ab.getName()).field(ab.getField()));
+						if (ab.getField() != null)
+						{
+							dhb = dhb.subAggregation(avg(ab.getName()).field(ab.getField()));
+						} else if (ab.getScript() != null)
+						{
+							dhb = dhb.subAggregation(avg(ab.getName()).script(new Script(ab.getScript().getScriptText(),
+									ScriptService.ScriptType.INLINE, ab.getScript().getLanguage(), null)));
+						}
 					}
 				}
 			}
 
-			NativeSearchQueryBuilder nsqb = new NativeSearchQueryBuilder()
-					.withIndices("projectsnapshots")
-					.withTypes("projectsnapshot")
-					.withQuery(qb)
-					.addAggregation(dhb);
+
+			
+
+			NativeSearchQueryBuilder nsqb = new NativeSearchQueryBuilder().withIndices("projectsnapshots")
+					.withTypes("projectsnapshot").withQuery(qb).addAggregation(dhb);
+			
+			
+			logger.debug("Datehistogram Query = " + nsqb.build().getQuery().toString());
+
 
 			Aggregations aggs = elasticTemplate.query(nsqb.build(), new ResultsExtractor<Aggregations>()
 			{
@@ -176,13 +206,11 @@ public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnaps
 			for (Iterator<Bucket> iterator = fetchedBuckets.iterator(); iterator.hasNext();)
 			{
 				Bucket fetchedBucket = iterator.next();
-				logger.debug("Bucket - " + fetchedBucket.toString());
 				logger.debug("key - " + fetchedBucket.getKeyAsString());
-				logger.debug("fetched bucket - " + fetchedBucket.getKeyAsString() + " has aggregations - " + fetchedBucket.getAggregations());
 
 				AggregationBucket responseBucket = new AggregationBucket();
 
-				//responseBucket.setKey(fetchedBucket.getKey());
+				// responseBucket.setKey(fetchedBucket.getKey());
 				responseBucket.setDoc_count(fetchedBucket.getDocCount());
 				responseBucket.setKey_as_string(fetchedBucket.getKeyAsString());
 
@@ -191,19 +219,18 @@ public class ElasticProjectSnapshotRepositoryImpl implements ElasticProjectSnaps
 					for (Iterator<AggregationBean> itr = dhr.getSubAggregations().iterator(); itr.hasNext();)
 					{
 						AggregationBean ab = itr.next();
-						logger.debug("fetching aggregation - " + ab.getName());
 						Aggregation agg = fetchedBucket.getAggregations().get(ab.getName());
 						if (agg != null)
 						{
-							logger.debug("aggregation name - " + agg.getName() + " value - " + agg.getProperty("value"));
+							logger.debug(
+									"aggregation name - " + agg.getName() + " value - " + agg.getProperty("value"));
 							AggregationBean resAggBean = new AggregationBean();
 							resAggBean.setName(agg.getName());
 							resAggBean.setValue(agg.getProperty("value"));
 							responseBucket.addAggregations(resAggBean);
-						}
-						else
+						} else
 						{
-							logger.debug("Aggregation not found - " + ab.getName());
+							logger.warn("Aggregation not found - " + ab.getName());
 						}
 					}
 				}

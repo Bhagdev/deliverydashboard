@@ -10,6 +10,8 @@ import com.ibm.big.deliverydashboard.dao.mongo.MongoProjectRepository;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationBean;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationResponse;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.DateHistogramRequest;
+import com.ibm.big.deliverydashboard.ddcommon.analysis.FieldQuery;
+import com.ibm.big.deliverydashboard.ddcommon.analysis.ScriptBean;
 
 @Service
 public class ProjectDashboardServiceImpl implements ProjectDashboardService
@@ -26,7 +28,8 @@ public class ProjectDashboardServiceImpl implements ProjectDashboardService
 	ProjectSnapshotBuilderFactory psbuilderFactory;
 
 	@Override
-	public AggregationResponse getProjectSpentEffortDateHistogram(String projectId, String fromDate, String toDate, String interval)
+	public AggregationResponse getProjectSpentEffortDateHistogram(String projectId, String sprintId, String fromDate,
+			String toDate, String interval)
 	{
 		DateHistogramRequest aggRequest = new DateHistogramRequest();
 		aggRequest.setName(projectId + ".EffortHistogram");
@@ -35,10 +38,23 @@ public class ProjectDashboardServiceImpl implements ProjectDashboardService
 		aggRequest.setToDate(toDate);
 		aggRequest.setInterval("1w");
 		aggRequest.setDateField("logDate");
-		aggRequest.setQueryField("project.id");
-		aggRequest.setQueryFieldValue(projectId);
+
+		FieldQuery fq = new FieldQuery();
+		fq.setField("project.id");
+		fq.setValue(projectId);
+
+		aggRequest.addMustCriteria(fq);
+
+		if (sprintId != null)
+		{
+			fq = new FieldQuery();
+			fq.setField("sprint.id");
+			fq.setValue(sprintId);
+			aggRequest.addMustCriteria(fq);
+		}
+
 		// TODO aggRequest.setTimeZone(timeZone);
-		
+
 		AggregationBean spentBuildEffortAgg = new AggregationBean();
 		spentBuildEffortAgg.setName("spentBuildEffort");
 		spentBuildEffortAgg.setField("sprint.spentHours.build");
@@ -50,13 +66,13 @@ public class ProjectDashboardServiceImpl implements ProjectDashboardService
 		spentDesignEffortAgg.setField("sprint.spentHours.design");
 		spentDesignEffortAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
 		aggRequest.addSubAggregations(spentDesignEffortAgg);
-		
+
 		AggregationBean spentTestEffortAgg = new AggregationBean();
 		spentTestEffortAgg.setName("spentTestEffort");
 		spentTestEffortAgg.setField("sprint.spentHours.test");
 		spentTestEffortAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
 		aggRequest.addSubAggregations(spentTestEffortAgg);
-		
+
 		AggregationBean spentUnproductiveAgg = new AggregationBean();
 		spentUnproductiveAgg.setName("spentUnproductiveEffort");
 		spentUnproductiveAgg.setField("sprint.spentHours.unproductive");
@@ -68,6 +84,19 @@ public class ProjectDashboardServiceImpl implements ProjectDashboardService
 		spentRequirementsEffortAgg.setField("sprint.spentHours.requirements");
 		spentRequirementsEffortAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
 		aggRequest.addSubAggregations(spentRequirementsEffortAgg);
+
+		AggregationBean totalSpentEffort = new AggregationBean();
+		/*
+		 * { "script": "", "lang": "expression"
+		 */
+		totalSpentEffort.setName("TotalSpentEffort");
+		ScriptBean sb = new ScriptBean();
+		sb.setLanguage("expression");
+		sb.setName("TotalSpentEffort");
+		sb.setScriptText(
+				"doc['sprint.spentHours.build']+doc['sprint.spentHours.test']+doc['sprint.spentHours.design']+doc['sprint.spentHours.support']+doc['sprint.spentHours.requirements']+doc['sprint.spentHours.unproductive']");
+		totalSpentEffort.setScript(sb);
+		aggRequest.addSubAggregations(totalSpentEffort);
 		
 		return elasticProjSnapshotRepo.getDateHistogramForProject(aggRequest);
 	}

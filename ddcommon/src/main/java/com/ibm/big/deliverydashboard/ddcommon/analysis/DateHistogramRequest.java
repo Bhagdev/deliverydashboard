@@ -1,13 +1,16 @@
 package com.ibm.big.deliverydashboard.ddcommon.analysis;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(value = Include.NON_EMPTY)
 public class DateHistogramRequest extends AggregationRequest
 {
-	String queryField;
-	String queryFieldValue;
+	List<FieldQuery> mustCriteria;
+
 	String dateField;
 	String interval;
 	String timeZone;
@@ -15,24 +18,23 @@ public class DateHistogramRequest extends AggregationRequest
 	String fromDate;
 	String toDate;
 
-	public String getQueryField()
+	public List<FieldQuery> getMustCriteria()
 	{
-		return queryField;
+		return mustCriteria;
 	}
 
-	public void setQueryField(String queryField)
+	public void setMustCriteria(List<FieldQuery> mustCriteria)
 	{
-		this.queryField = queryField;
+		this.mustCriteria = mustCriteria;
 	}
 
-	public String getQueryFieldValue()
+	public void addMustCriteria(FieldQuery query)
 	{
-		return queryFieldValue;
-	}
-
-	public void setQueryFieldValue(String queryFieldValue)
-	{
-		this.queryFieldValue = queryFieldValue;
+		if (mustCriteria == null)
+		{
+			mustCriteria = new LinkedList<>();
+		}
+		mustCriteria.add(query);
 	}
 
 	public String getDateField()

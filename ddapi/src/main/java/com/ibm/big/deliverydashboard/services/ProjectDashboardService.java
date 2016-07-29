@@ -4,5 +4,5 @@ import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationResponse;
 
 public interface ProjectDashboardService
 {
-	public AggregationResponse getProjectSpentEffortDateHistogram(String projectId, String fromDate, String toDate, String interval);
+	public AggregationResponse getProjectSpentEffortDateHistogram(String projectId, String sprintId, String fromDate, String toDate, String interval);
 }
