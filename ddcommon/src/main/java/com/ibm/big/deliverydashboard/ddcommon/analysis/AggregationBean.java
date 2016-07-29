@@ -2,6 +2,8 @@ package com.ibm.big.deliverydashboard.ddcommon.analysis;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @JsonInclude(value = Include.NON_EMPTY)
 public class AggregationBean
@@ -11,6 +13,8 @@ public class AggregationBean
 	public static final String AGGREGATION_TYPE_TERMS = "terms";
 	public static final String AGGREGATION_TYPE_MIN = "min";
 	public static final String AGGREGATION_TYPE_MAX = "max";
+	public static final String AGGREGATION_TYPE_COUNT = "count";
+	public static final String AGGREGATION_TYPE_EXTENDEDSTATS = "extendedStats";
 
 	private String type;
 	private String name;
@@ -96,4 +100,16 @@ public class AggregationBean
 		return true;
 	}
 
+	public String toString()
+	{
+		ObjectMapper mapper = new ObjectMapper();
+		try
+		{
+			return mapper.writeValueAsString(this);
+		} catch (JsonProcessingException e)
+		{
+			e.printStackTrace();
+		}
+		return "";
+	}
 }

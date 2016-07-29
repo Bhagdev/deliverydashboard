@@ -53,15 +53,15 @@ public class ProjectDashboardController extends AbstractController
 		return response;
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}/spentEffort", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ResponseEntity<ResponseBean<AggregationResponse>> getProjectSpentEffort(
+	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}/spentEffort/dateHistogram", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<ResponseBean<AggregationResponse>> getProjectSpentEffortDateHistogram(
 			@PathVariable(value = "projectId") String projectId,
 			@RequestHeader(value = "sprintId", required = false) String sprintId,
 			@RequestHeader(value = "fromDate", required = true) String fromDate,
 			@RequestHeader(value = "toDate", required = true) String toDate,
 			@RequestHeader(value = "interval", required = true) String interval)
 	{
-		logger.debug("finding project snapshots for project.id: " + projectId);
+		logger.debug("spentEffort Date Histogram for: " + projectId);
 		ResponseEntity<ResponseBean<AggregationResponse>> response;
 		ResponseBean<AggregationResponse> rb = new ResponseBean<>();
 		try
@@ -75,6 +75,71 @@ public class ProjectDashboardController extends AbstractController
 		}
 		return response;
 	}
+
+	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}/effort/burndown", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<ResponseBean<AggregationResponse>> getProjectBurndown(
+			@PathVariable(value = "projectId") String projectId,
+			@RequestHeader(value = "sprintId", required = false) String sprintId,
+			@RequestHeader(value = "fromDate", required = true) String fromDate,
+			@RequestHeader(value = "toDate", required = true) String toDate,
+			@RequestHeader(value = "interval", required = true) String interval)
+	{
+		logger.debug("Effort Burndown for project.id: " + projectId);
+		ResponseEntity<ResponseBean<AggregationResponse>> response;
+		ResponseBean<AggregationResponse> rb = new ResponseBean<>();
+		try
+		{
+			AggregationResponse p = projDashService.getProjectBurnDownDateHistogram(projectId, sprintId, fromDate, toDate, interval);
+			rb.setResponse(p);
+			response = ResponseEntity.ok(rb);
+		} catch (Exception e)
+		{
+			response = handelException(e, rb);
+		}
+		return response;
+	}
 	
-	
+	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}/effort/extendedStats", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<ResponseBean<AggregationResponse>> getProjectEffortExtendedStats(
+			@PathVariable(value = "projectId") String projectId,
+			@RequestHeader(value = "sprintId", required = false) String sprintId,
+			@RequestHeader(value = "fromDate", required = true) String fromDate,
+			@RequestHeader(value = "toDate", required = true) String toDate)
+	{
+		logger.debug("Effort Extended Stats for project.id: " + projectId);
+		ResponseEntity<ResponseBean<AggregationResponse>> response;
+		ResponseBean<AggregationResponse> rb = new ResponseBean<>();
+		try
+		{
+			AggregationResponse p = projDashService.getProjectEffortExtendedStats(projectId, sprintId, fromDate, toDate);
+			rb.setResponse(p);
+			response = ResponseEntity.ok(rb);
+		} catch (Exception e)
+		{
+			response = handelException(e, rb);
+		}
+		return response;
+	}	
+
+	@RequestMapping(method = RequestMethod.GET, value = "/projectsnapshot/{projectId}/spentEffort/extendedStats", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<ResponseBean<AggregationResponse>> getProjectSpentEffortExtendedStats(
+			@PathVariable(value = "projectId") String projectId,
+			@RequestHeader(value = "sprintId", required = false) String sprintId,
+			@RequestHeader(value = "fromDate", required = true) String fromDate,
+			@RequestHeader(value = "toDate", required = true) String toDate)
+	{
+		logger.debug("Spent Effort Extended Stats for project.id: " + projectId);
+		ResponseEntity<ResponseBean<AggregationResponse>> response;
+		ResponseBean<AggregationResponse> rb = new ResponseBean<>();
+		try
+		{
+			AggregationResponse p = projDashService.getProjectSpentEffortExtendedStats(projectId, sprintId, fromDate, toDate);
+			rb.setResponse(p);
+			response = ResponseEntity.ok(rb);
+		} catch (Exception e)
+		{
+			response = handelException(e, rb);
+		}
+		return response;
+	}	
 }

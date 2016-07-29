@@ -6,32 +6,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @JsonInclude(value = Include.NON_EMPTY)
-public class DateHistogramRequest extends AggregationRequest
+public class SimpleAggregationRequest extends AggregationRequest
 {
-
-	String interval;
-	int minDocCount;
-
-	public String getInterval()
-	{
-		return interval;
-	}
-
-	public void setInterval(String interval)
-	{
-		this.interval = interval;
-	}
-
-	public int getMinDocCount()
-	{
-		return minDocCount;
-	}
-
-	public void setMinDocCount(int minDocCount)
-	{
-		this.minDocCount = minDocCount;
-	}
-
 	public String toString()
 	{
 		ObjectMapper mapper = new ObjectMapper();

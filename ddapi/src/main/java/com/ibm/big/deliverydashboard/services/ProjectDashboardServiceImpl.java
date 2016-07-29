@@ -12,6 +12,7 @@ import com.ibm.big.deliverydashboard.ddcommon.analysis.AggregationResponse;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.DateHistogramRequest;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.FieldQuery;
 import com.ibm.big.deliverydashboard.ddcommon.analysis.ScriptBean;
+import com.ibm.big.deliverydashboard.ddcommon.analysis.SimpleAggregationRequest;
 
 @Service
 public class ProjectDashboardServiceImpl implements ProjectDashboardService
@@ -28,6 +29,123 @@ public class ProjectDashboardServiceImpl implements ProjectDashboardService
 	ProjectSnapshotBuilderFactory psbuilderFactory;
 
 	@Override
+	public AggregationResponse getProjectSpentEffortExtendedStats(String projectId, String sprintId, String fromDate,
+			String toDate)
+	{
+		SimpleAggregationRequest sar = new SimpleAggregationRequest();
+		sar.setName(projectId + ".SpentEffortExtendedStats");
+		sar.setFromDate(fromDate);
+		sar.setToDate(toDate);
+		sar.setDateField("logDate");
+
+		FieldQuery fq = new FieldQuery();
+		fq.setField("project.id");
+		fq.setValue(projectId);
+
+		sar.addMustCriteria(fq);
+
+		if (sprintId != null)
+		{
+			fq = new FieldQuery();
+			fq.setField("sprint.id");
+			fq.setValue(sprintId);
+			sar.addMustCriteria(fq);
+		}
+
+		sar.addSubAggregations(createAggregation("spentRequirementsEffort",
+				AggregationBean.AGGREGATION_TYPE_EXTENDEDSTATS, "sprint.spentHours.requirements"));
+		sar.addSubAggregations(createAggregation("spentDesignEffort", AggregationBean.AGGREGATION_TYPE_EXTENDEDSTATS,
+				"sprint.spentHours.design"));
+		sar.addSubAggregations(createAggregation("spentBuildEffort", AggregationBean.AGGREGATION_TYPE_EXTENDEDSTATS,
+				"sprint.spentHours.build"));
+		sar.addSubAggregations(createAggregation("spentTestEffort", AggregationBean.AGGREGATION_TYPE_EXTENDEDSTATS,
+				"sprint.spentHours.test"));
+		sar.addSubAggregations(createAggregation("spentUnproductiveEffort",
+				AggregationBean.AGGREGATION_TYPE_EXTENDEDSTATS, "sprint.spentHours.unproductive"));
+
+		return elasticProjSnapshotRepo.getExtendedStats(sar);
+	}
+
+	@Override
+	public AggregationResponse getProjectEffortExtendedStats(String projectId, String sprintId, String fromDate, String toDate)
+	{
+		SimpleAggregationRequest sar = new SimpleAggregationRequest();
+		sar.setName(projectId + ".EffortExtendedStats");
+		sar.setFromDate(fromDate);
+		sar.setToDate(toDate);
+		sar.setDateField("logDate");
+
+		FieldQuery fq = new FieldQuery();
+		fq.setField("project.id");
+		fq.setValue(projectId);
+
+		sar.addMustCriteria(fq);
+
+		if (sprintId != null)
+		{
+			fq = new FieldQuery();
+			fq.setField("sprint.id");
+			fq.setValue(sprintId);
+			sar.addMustCriteria(fq);
+		}
+		
+		sar.addSubAggregations(createAggregation("SpentEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"SpentEffort",
+				"doc['sprint.spentHours.build']+doc['sprint.spentHours.test']+doc['sprint.spentHours.design']+doc['sprint.spentHours.support']+doc['sprint.spentHours.requirements']+doc['sprint.spentHours.unproductive']"));
+
+		sar.addSubAggregations(createAggregation("RemainingEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"RemainingEffort",
+				"doc['sprint.remainingHours.build']+doc['sprint.remainingHours.test']+doc['sprint.remainingHours.design']+doc['sprint.remainingHours.support']+doc['sprint.remainingHours.requirements']"));
+
+		sar.addSubAggregations(createAggregation("EstimatedEffort", AggregationBean.AGGREGATION_TYPE_MAX,
+				"EstimatedEffort",
+				"doc['sprint.estimatedHours.build']+doc['sprint.estimatedHours.test']+doc['sprint.estimatedHours.design']+doc['sprint.estimatedHours.support']+doc['sprint.estimatedHours.requirements']"));
+		return elasticProjSnapshotRepo.getExtendedStats(sar);
+	}
+	
+	@Override
+	public AggregationResponse getProjectBurnDownDateHistogram(String projectId, String sprintId, String fromDate,
+			String toDate, String interval)
+	{
+		DateHistogramRequest aggRequest = new DateHistogramRequest();
+		aggRequest.setName(projectId + ".EffortHistogram");
+		aggRequest.setFromDate(fromDate);
+		aggRequest.setMinDocCount(1);
+		aggRequest.setToDate(toDate);
+		aggRequest.setInterval(interval);
+		aggRequest.setDateField("logDate");
+
+		FieldQuery fq = new FieldQuery();
+		fq.setField("project.id");
+		fq.setValue(projectId);
+
+		aggRequest.addMustCriteria(fq);
+
+		if (sprintId != null)
+		{
+			fq = new FieldQuery();
+			fq.setField("sprint.id");
+			fq.setValue(sprintId);
+			aggRequest.addMustCriteria(fq);
+		}
+
+		aggRequest.addSubAggregations(createAggregation("SpentEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"SpentEffort",
+				"doc['sprint.spentHours.build']+doc['sprint.spentHours.test']+doc['sprint.spentHours.design']+doc['sprint.spentHours.support']+doc['sprint.spentHours.requirements']+doc['sprint.spentHours.unproductive']"));
+
+		aggRequest.addSubAggregations(createAggregation("RemainingEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"RemainingEffort",
+				"doc['sprint.remainingHours.build']+doc['sprint.remainingHours.test']+doc['sprint.remainingHours.design']+doc['sprint.remainingHours.support']+doc['sprint.remainingHours.requirements']"));
+
+		aggRequest.addSubAggregations(createAggregation("EstimatedEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"EstimatedEffort",
+				"doc['sprint.estimatedHours.build']+doc['sprint.estimatedHours.test']+doc['sprint.estimatedHours.design']+doc['sprint.estimatedHours.support']+doc['sprint.estimatedHours.requirements']"));
+
+		return elasticProjSnapshotRepo.getDateHistogramForProject(aggRequest);
+
+	}
+
+	@Override
 	public AggregationResponse getProjectSpentEffortDateHistogram(String projectId, String sprintId, String fromDate,
 			String toDate, String interval)
 	{
@@ -36,7 +154,7 @@ public class ProjectDashboardServiceImpl implements ProjectDashboardService
 		aggRequest.setFromDate(fromDate);
 		aggRequest.setMinDocCount(1);
 		aggRequest.setToDate(toDate);
-		aggRequest.setInterval("1w");
+		aggRequest.setInterval(interval);
 		aggRequest.setDateField("logDate");
 
 		FieldQuery fq = new FieldQuery();
@@ -55,50 +173,45 @@ public class ProjectDashboardServiceImpl implements ProjectDashboardService
 
 		// TODO aggRequest.setTimeZone(timeZone);
 
-		AggregationBean spentBuildEffortAgg = new AggregationBean();
-		spentBuildEffortAgg.setName("spentBuildEffort");
-		spentBuildEffortAgg.setField("sprint.spentHours.build");
-		spentBuildEffortAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
-		aggRequest.addSubAggregations(spentBuildEffortAgg);
-
-		AggregationBean spentDesignEffortAgg = new AggregationBean();
-		spentDesignEffortAgg.setName("spentDesignEffort");
-		spentDesignEffortAgg.setField("sprint.spentHours.design");
-		spentDesignEffortAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
-		aggRequest.addSubAggregations(spentDesignEffortAgg);
-
-		AggregationBean spentTestEffortAgg = new AggregationBean();
-		spentTestEffortAgg.setName("spentTestEffort");
-		spentTestEffortAgg.setField("sprint.spentHours.test");
-		spentTestEffortAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
-		aggRequest.addSubAggregations(spentTestEffortAgg);
-
-		AggregationBean spentUnproductiveAgg = new AggregationBean();
-		spentUnproductiveAgg.setName("spentUnproductiveEffort");
-		spentUnproductiveAgg.setField("sprint.spentHours.unproductive");
-		spentUnproductiveAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
-		aggRequest.addSubAggregations(spentUnproductiveAgg);
-
-		AggregationBean spentRequirementsEffortAgg = new AggregationBean();
-		spentRequirementsEffortAgg.setName("spentRequirementsEffort");
-		spentRequirementsEffortAgg.setField("sprint.spentHours.requirements");
-		spentRequirementsEffortAgg.setType(AggregationBean.AGGREGATION_TYPE_SUM);
-		aggRequest.addSubAggregations(spentRequirementsEffortAgg);
-
-		AggregationBean totalSpentEffort = new AggregationBean();
-		/*
-		 * { "script": "", "lang": "expression"
-		 */
-		totalSpentEffort.setName("TotalSpentEffort");
-		ScriptBean sb = new ScriptBean();
-		sb.setLanguage("expression");
-		sb.setName("TotalSpentEffort");
-		sb.setScriptText(
-				"doc['sprint.spentHours.build']+doc['sprint.spentHours.test']+doc['sprint.spentHours.design']+doc['sprint.spentHours.support']+doc['sprint.spentHours.requirements']+doc['sprint.spentHours.unproductive']");
-		totalSpentEffort.setScript(sb);
-		aggRequest.addSubAggregations(totalSpentEffort);
+		aggRequest.addSubAggregations(createAggregation("spentRequirementsEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"sprint.spentHours.requirements"));
+		aggRequest.addSubAggregations(createAggregation("spentDesignEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"sprint.spentHours.design"));
+		aggRequest.addSubAggregations(
+				createAggregation("spentBuildEffort", AggregationBean.AGGREGATION_TYPE_SUM, "sprint.spentHours.build"));
+		aggRequest.addSubAggregations(
+				createAggregation("spentTestEffort", AggregationBean.AGGREGATION_TYPE_SUM, "sprint.spentHours.test"));
+		aggRequest.addSubAggregations(
+				createAggregation("spentSupportEffort", AggregationBean.AGGREGATION_TYPE_SUM, "sprint.spentHours.support"));
+		aggRequest.addSubAggregations(
+				createAggregation("spentUnproductiveEffort", AggregationBean.AGGREGATION_TYPE_SUM, "sprint.spentHours.unproductive"));		
 		
+		aggRequest.addSubAggregations(createAggregation("TotalSpentEffort", AggregationBean.AGGREGATION_TYPE_SUM,
+				"TotalSpentEffort",
+				"doc['sprint.spentHours.build']+doc['sprint.spentHours.test']+doc['sprint.spentHours.design']+doc['sprint.spentHours.support']+doc['sprint.spentHours.requirements']+doc['sprint.spentHours.unproductive']"));
+
 		return elasticProjSnapshotRepo.getDateHistogramForProject(aggRequest);
 	}
 
+	private AggregationBean createAggregation(String name, String type, String field)
+	{
+		AggregationBean ab = new AggregationBean();
+		ab.setName(name);
+		ab.setType(type);
+		ab.setField(field);
+		return ab;
+	}
+
+	private AggregationBean createAggregation(String name, String type, String scriptName, String scriptText)
+	{
+		AggregationBean ab = new AggregationBean();
+		ab.setName(name);
+		ab.setType(type);
+		ScriptBean sb = new ScriptBean();
+		sb.setLanguage("expression");
+		sb.setName(scriptName);
+		sb.setScriptText(scriptText);
+		ab.setScript(sb);
+		return ab;
+	}
 }

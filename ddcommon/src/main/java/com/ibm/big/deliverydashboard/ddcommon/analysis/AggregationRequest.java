@@ -1,6 +1,7 @@
 package com.ibm.big.deliverydashboard.ddcommon.analysis;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -12,6 +13,11 @@ public abstract class AggregationRequest
 
 	private String name;
 	private List<AggregationBean> subAggregations;
+	List<FieldQuery> mustCriteria;
+	String dateField;
+	String timeZone;
+	String fromDate;
+	String toDate;
 
 	public String getName()
 	{
@@ -21,6 +27,46 @@ public abstract class AggregationRequest
 	public void setName(String name)
 	{
 		this.name = name;
+	}
+
+	public String getDateField()
+	{
+		return dateField;
+	}
+
+	public void setDateField(String dateField)
+	{
+		this.dateField = dateField;
+	}
+
+	public String getTimeZone()
+	{
+		return timeZone;
+	}
+
+	public void setTimeZone(String timeZone)
+	{
+		this.timeZone = timeZone;
+	}
+
+	public String getFromDate()
+	{
+		return fromDate;
+	}
+
+	public void setFromDate(String fromDate)
+	{
+		this.fromDate = fromDate;
+	}
+
+	public String getToDate()
+	{
+		return toDate;
+	}
+
+	public void setToDate(String toDate)
+	{
+		this.toDate = toDate;
 	}
 
 	public List<AggregationBean> getSubAggregations()
@@ -40,6 +86,25 @@ public abstract class AggregationRequest
 			subAggregations = new ArrayList<>();
 		}
 		subAggregations.add(ab);
+	}
+
+	public List<FieldQuery> getMustCriteria()
+	{
+		return mustCriteria;
+	}
+
+	public void setMustCriteria(List<FieldQuery> mustCriteria)
+	{
+		this.mustCriteria = mustCriteria;
+	}
+
+	public void addMustCriteria(FieldQuery query)
+	{
+		if (mustCriteria == null)
+		{
+			mustCriteria = new LinkedList<>();
+		}
+		mustCriteria.add(query);
 	}
 
 	@Override
